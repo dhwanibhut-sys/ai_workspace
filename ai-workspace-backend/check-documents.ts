@@ -13,7 +13,7 @@ async function main() {
     console.log(`Owner: ${doc.owner?.email || 'N/A'} (ID: ${doc.ownerId})`);
     console.log('---');
   });
-  
+
   const users = await prisma.user.findMany();
   console.log('--- USERS ---');
   users.forEach((user) => {

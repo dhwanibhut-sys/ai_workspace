@@ -52,7 +52,7 @@ export function WorkspaceApp() {
     setResults(docs);
   }
 
-  async function handleCreateUser() {
+  async function handleJoinWorkspace() {
     try {
       setLoading(true);
       setMessage(null);
@@ -62,10 +62,19 @@ export function WorkspaceApp() {
       await loadWorkspace(user.id);
       setMessage(`Workspace ready for ${user.email}`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not create user.');
+      setMessage(error instanceof Error ? error.message : 'Could not join workspace.');
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleLogout() {
+    window.localStorage.removeItem('ai-workspace-user-id');
+    setUserId('');
+    setDocuments([]);
+    setChats([]);
+    setResults([]);
+    setMessage('Logged out successfully.');
   }
 
   async function handleSearch() {
@@ -149,9 +158,16 @@ export function WorkspaceApp() {
                 placeholder="founder@workspace.ai"
               />
             </div>
-            <button className="button" onClick={handleCreateUser} disabled={loading || !email}>
-              Create User
-            </button>
+            <div className="row">
+              <button className="button" onClick={handleJoinWorkspace} disabled={loading || !email}>
+                {userId ? 'Switch Workspace' : 'Join Workspace'}
+              </button>
+              {userId && (
+                <button className="button ghost" onClick={handleLogout} disabled={loading}>
+                  Logout
+                </button>
+              )}
+            </div>
             <div className="field">
               <label>Active User ID</label>
               <input className="input" value={userId} readOnly placeholder="Create a user to begin" />
