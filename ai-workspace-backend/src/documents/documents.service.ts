@@ -13,6 +13,12 @@ export class DocumentsService {
         title,
         content,
         ownerId: userId,
+        versions: {
+          create: {
+            title,
+            content,
+          },
+        },
       },
     });
   }
@@ -38,14 +44,31 @@ export class DocumentsService {
 
   async updateDocument(id: string, updateDocumentDto: UpdateDocumentDto) {
     try {
+      const existingDocument = await this.prisma.document.findUnique({
+        where: { id },
+      });
+
+      if (!existingDocument) {
+        throw new NotFoundException('Document not found.');
+      }
+
       return await this.prisma.document.update({
         where: { id },
-        data: updateDocumentDto,
+        data: {
+          ...updateDocumentDto,
+          versions: {
+            create: {
+              title: existingDocument.title,
+              content: existingDocument.content,
+            },
+          },
+        },
       });
     } catch (error) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
+        error instanceof NotFoundException ||
+        (error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2025')
       ) {
         throw new NotFoundException('Document not found.');
       }
@@ -71,5 +94,43 @@ export class DocumentsService {
 
       throw error;
     }
+  }
+
+  async getDocumentVersions(id: string) {
+    await this.getDocumentById(id);
+
+    return this.prisma.documentVersion.findMany({
+      where: { documentId: id },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async restoreDocumentVersion(id: string, versionId: string) {
+    const [document, version] = await Promise.all([
+      this.prisma.document.findUnique({ where: { id } }),
+      this.prisma.documentVersion.findUnique({ where: { id: versionId } }),
+    ]);
+
+    if (!document) {
+      throw new NotFoundException('Document not found.');
+    }
+
+    if (!version || version.documentId !== id) {
+      throw new NotFoundException('Document version not found.');
+    }
+
+    return this.prisma.document.update({
+      where: { id },
+      data: {
+        title: version.title,
+        content: version.content,
+        versions: {
+          create: {
+            title: document.title,
+            content: document.content,
+          },
+        },
+      },
+    });
   }
 }

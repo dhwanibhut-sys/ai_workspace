@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { CreateDocumentDto } from './dto/create-document.dto';
+import { RestoreDocumentVersionDto } from './dto/restore-document-version.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { DocumentsService } from './documents.service';
 
@@ -47,5 +48,21 @@ export class DocumentsController {
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.documentsService.deleteDocument(id);
+  }
+
+  @Get(':id/versions')
+  getVersions(@Param('id', ParseUUIDPipe) id: string) {
+    return this.documentsService.getDocumentVersions(id);
+  }
+
+  @Post(':id/versions/restore')
+  restoreVersion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() restoreDocumentVersionDto: RestoreDocumentVersionDto,
+  ) {
+    return this.documentsService.restoreDocumentVersion(
+      id,
+      restoreDocumentVersionDto.versionId,
+    );
   }
 }
