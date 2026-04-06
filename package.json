@@ -1,5 +1,15 @@
 {
-  "dependencies": {
-    "pg": "^8.20.0"
+  "name": "ai-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd ai-workspace-backend && npm run start:dev",
+    "dev:frontend": "cd ai-workspace-frontend && npm run dev",
+    "install:all": "npm install && cd ai-workspace-backend && npm install && cd ../ai-workspace-frontend && npm install",
+    "build:all": "cd ai-workspace-backend && npm run build && cd ../ai-workspace-frontend && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

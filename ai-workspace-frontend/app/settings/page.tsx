@@ -5,8 +5,8 @@ export default function SettingsPage() {
         <div className="pill">Deployment</div>
         <h1>Settings and deployment notes</h1>
         <p>
-          This frontend expects a backend URL in <code>NEXT_PUBLIC_API_URL</code>. For local work,
-          point it to <code>http://localhost:3000</code>. For Vercel, point it to your deployed Nest
+          This frontend expects a backend URL in <code>NEXT_PUBLIC_API_URL=http://localhost:3001</code>. For local work,
+          point it to <code>http://localhost:3001</code>. For Vercel, point it to your deployed Nest
           backend URL.
         </p>
       </section>
