@@ -12,7 +12,7 @@ import { ChatWithAiDto } from './dto/chat-with-ai.dto';
 export class AiService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async chat(chatWithAiDto: ChatWithAiDto) {
+  async chat(chatWithAiDto: ChatWithAiDto, userId: string) {
     const apiKey = process.env.OPENAI_API_KEY;
     const baseURL = process.env.OPENAI_BASE_URL;
 
@@ -27,8 +27,11 @@ export class AiService {
       ...(baseURL ? { baseURL } : {}),
     });
     const document = chatWithAiDto.documentId
-      ? await this.prisma.document.findUnique({
-          where: { id: chatWithAiDto.documentId },
+      ? await this.prisma.document.findFirst({
+          where: {
+            id: chatWithAiDto.documentId,
+            ownerId: userId,
+          },
         })
       : null;
 

@@ -6,7 +6,6 @@ export class CreateDocumentDto {
   title: string;
 
   @IsString()
-  @IsNotEmpty()
   content: string;
 
   @IsUUID()

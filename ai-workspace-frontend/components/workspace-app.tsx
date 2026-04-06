@@ -30,6 +30,7 @@ export function WorkspaceApp() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Document[]>([]);
+  const [newDocTitle, setNewDocTitle] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -79,6 +80,25 @@ export function WorkspaceApp() {
       setResults(response);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Search failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCreateDocument() {
+    if (!userId || !newDocTitle.trim()) return;
+
+    try {
+      setLoading(true);
+      const doc = (await api.createDocument({
+        title: newDocTitle,
+        content: '',
+        userId,
+      })) as Document;
+      setNewDocTitle('');
+      window.location.href = `/documents/${doc.id}`;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not create document.');
     } finally {
       setLoading(false);
     }
@@ -139,9 +159,25 @@ export function WorkspaceApp() {
             {message ? <div className="meta">{message}</div> : null}
           </div>
 
-          <div className="panel span-4 metric">
+          <div className="panel span-4 metric stack">
             <h3>Documents</h3>
             <div className="metric-value">{documents.length}</div>
+            <div className="field">
+              <input
+                className="input"
+                style={{ fontSize: '0.875rem' }}
+                value={newDocTitle}
+                onChange={(e) => setNewDocTitle(e.target.value)}
+                placeholder="New document title..."
+              />
+            </div>
+            <button
+              className="button secondary sm"
+              onClick={handleCreateDocument}
+              disabled={loading || !newDocTitle || !userId}
+            >
+              Create Document
+            </button>
             <div className="muted">Persisted through your Nest + Prisma backend.</div>
           </div>
 

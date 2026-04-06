@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { socket } from '@/lib/socket';
 import type { Chat, Document, DocumentVersion, Message } from '@/lib/types';
 
 type Props = {
@@ -25,13 +26,40 @@ export function DocumentWorkspace({ documentId }: Props) {
     const storedUserId = window.localStorage.getItem('ai-workspace-user-id') || '';
     setUserId(storedUserId);
     void loadDocument(storedUserId);
+
+    // Socket.io integration
+    socket.connect();
+    socket.emit('join_document', { documentId, userId: storedUserId });
+
+    socket.on('doc_updated', (data: { content: string; title: string }) => {
+      setContent(data.content);
+      setTitle(data.title);
+      setStatus('Other user updated the document.');
+    });
+
+    return () => {
+      socket.emit('leave_document', documentId);
+      socket.off('doc_updated');
+      socket.disconnect();
+    };
   }, [documentId]);
+
+  // Real-time synchronization
+  useEffect(() => {
+    if (!documentId || documentId === 'demo') return;
+
+    const timeoutId = setTimeout(() => {
+      socket.emit('doc_update', { documentId, content, title });
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [content, title, documentId]);
 
   async function loadDocument(storedUserId: string) {
     try {
       const [doc, versionList] = await Promise.all([
-        api.getDocument(documentId) as Promise<Document>,
-        api.getVersions(documentId) as Promise<DocumentVersion[]>,
+        api.getDocument(documentId, storedUserId) as Promise<Document>,
+        api.getVersions(documentId, storedUserId) as Promise<DocumentVersion[]>,
       ]);
 
       setDocument(doc);
@@ -43,7 +71,7 @@ export function DocumentWorkspace({ documentId }: Props) {
         const chats = (await api.listChats(storedUserId)) as Chat[];
         const existing = chats[0];
         if (existing) {
-          const fullChat = (await api.getChat(existing.id)) as Chat;
+          const fullChat = (await api.getChat(existing.id, storedUserId)) as Chat;
           setChat(fullChat);
           setMessages(fullChat.messages || []);
         }
@@ -56,9 +84,15 @@ export function DocumentWorkspace({ documentId }: Props) {
 
   async function handleSave() {
     try {
-      const updated = (await api.updateDocument(documentId, { title, content })) as Document;
+      const updated = (await api.updateDocument(documentId, userId, {
+        title,
+        content,
+      })) as Document;
       setDocument(updated);
-      const versionList = (await api.getVersions(documentId)) as DocumentVersion[];
+      const versionList = (await api.getVersions(
+        documentId,
+        userId,
+      )) as DocumentVersion[];
       setVersions(versionList);
       setStatus('Document saved and version snapshot recorded.');
     } catch (error) {
@@ -73,7 +107,7 @@ export function DocumentWorkspace({ documentId }: Props) {
       userId,
       title: document?.title ? `${document.title} assistant` : 'Workspace assistant',
     })) as Chat;
-    const fullChat = (await api.getChat(created.id)) as Chat;
+    const fullChat = (await api.getChat(created.id, userId)) as Chat;
     setChat(fullChat);
     setMessages(fullChat.messages || []);
     return created;
@@ -82,7 +116,7 @@ export function DocumentWorkspace({ documentId }: Props) {
   async function handleAskAi(nextPrompt: string) {
     try {
       const activeChat = await ensureChat();
-      const response = (await api.sendMessage(activeChat.id, {
+      const response = (await api.sendMessage(activeChat.id, userId, {
         content: nextPrompt,
         documentId,
         selectedText: selectedText || undefined,
@@ -101,11 +135,18 @@ export function DocumentWorkspace({ documentId }: Props) {
 
   async function handleRestore(versionId: string) {
     try {
-      const restored = (await api.restoreVersion(documentId, versionId)) as Document;
+      const restored = (await api.restoreVersion(
+        documentId,
+        userId,
+        versionId,
+      )) as Document;
       setDocument(restored);
       setTitle(restored.title);
       setContent(restored.content);
-      const versionList = (await api.getVersions(documentId)) as DocumentVersion[];
+      const versionList = (await api.getVersions(
+        documentId,
+        userId,
+      )) as DocumentVersion[];
       setVersions(versionList);
       setStatus('Version restored successfully.');
     } catch (error) {

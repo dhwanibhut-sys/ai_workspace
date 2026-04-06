@@ -32,9 +32,12 @@ export class ChatService {
     });
   }
 
-  async getChatById(id: string) {
-    const chat = await this.prisma.chat.findUnique({
-      where: { id },
+  async getChatById(id: string, userId: string) {
+    const chat = await this.prisma.chat.findFirst({
+      where: {
+        id,
+        userId,
+      },
       include: {
         messages: {
           orderBy: { createdAt: 'asc' },
@@ -49,9 +52,12 @@ export class ChatService {
     return chat;
   }
 
-  async sendMessage(chatId: string, sendMessageDto: SendMessageDto) {
-    const chat = await this.prisma.chat.findUnique({
-      where: { id: chatId },
+  async sendMessage(chatId: string, sendMessageDto: SendMessageDto, userId: string) {
+    const chat = await this.prisma.chat.findFirst({
+      where: {
+        id: chatId,
+        userId,
+      },
       include: {
         messages: {
           orderBy: { createdAt: 'asc' },
@@ -76,7 +82,7 @@ export class ChatService {
       prompt: sendMessageDto.content,
       documentId: sendMessageDto.documentId,
       selectedText: sendMessageDto.selectedText,
-    });
+    }, userId);
 
     const assistantMessage = await this.prisma.message.create({
       data: {

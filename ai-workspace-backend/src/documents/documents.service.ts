@@ -1,4 +1,4 @@
-import { NotFoundException, Injectable } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateDocumentDto } from './dto/update-document.dto';
@@ -30,26 +30,40 @@ export class DocumentsService {
     });
   }
 
-  async getDocumentById(id: string) {
-    const document = await this.prisma.document.findUnique({
-      where: { id },
+  async getDocumentById(id: string, authorizingUserId: string) {
+    const document = await this.prisma.document.findFirst({
+      where: {
+        id,
+        ownerId: authorizingUserId,
+      },
     });
 
     if (!document) {
-      throw new NotFoundException('Document not found.');
+      throw new ForbiddenException(
+        'Document not found or you do not have permission to access it.',
+      );
     }
 
     return document;
   }
 
-  async updateDocument(id: string, updateDocumentDto: UpdateDocumentDto) {
+  async updateDocument(
+    id: string,
+    updateDocumentDto: UpdateDocumentDto,
+    authorizingUserId: string,
+  ) {
     try {
-      const existingDocument = await this.prisma.document.findUnique({
-        where: { id },
+      const existingDocument = await this.prisma.document.findFirst({
+        where: {
+          id,
+          ownerId: authorizingUserId,
+        },
       });
 
       if (!existingDocument) {
-        throw new NotFoundException('Document not found.');
+        throw new ForbiddenException(
+          'Document not found or you do not have permission to update it.',
+        );
       }
 
       return await this.prisma.document.update({
@@ -67,18 +81,32 @@ export class DocumentsService {
     } catch (error) {
       if (
         error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
         (error instanceof Prisma.PrismaClientKnownRequestError &&
           error.code === 'P2025')
       ) {
-        throw new NotFoundException('Document not found.');
+        throw error;
       }
 
       throw error;
     }
   }
 
-  async deleteDocument(id: string) {
+  async deleteDocument(id: string, authorizingUserId: string) {
     try {
+      const existingDocument = await this.prisma.document.findFirst({
+        where: {
+          id,
+          ownerId: authorizingUserId,
+        },
+      });
+
+      if (!existingDocument) {
+        throw new ForbiddenException(
+          'Document not found or you do not have permission to delete it.',
+        );
+      }
+
       await this.prisma.document.delete({
         where: { id },
       });
@@ -86,18 +114,20 @@ export class DocumentsService {
       return { message: 'Document deleted successfully.' };
     } catch (error) {
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        (error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2025')
       ) {
-        throw new NotFoundException('Document not found.');
+        throw error;
       }
 
       throw error;
     }
   }
 
-  async getDocumentVersions(id: string) {
-    await this.getDocumentById(id);
+  async getDocumentVersions(id: string, authorizingUserId: string) {
+    await this.getDocumentById(id, authorizingUserId);
 
     return this.prisma.documentVersion.findMany({
       where: { documentId: id },
@@ -105,14 +135,25 @@ export class DocumentsService {
     });
   }
 
-  async restoreDocumentVersion(id: string, versionId: string) {
+  async restoreDocumentVersion(
+    id: string,
+    versionId: string,
+    authorizingUserId: string,
+  ) {
     const [document, version] = await Promise.all([
-      this.prisma.document.findUnique({ where: { id } }),
+      this.prisma.document.findFirst({
+        where: {
+          id,
+          ownerId: authorizingUserId,
+        },
+      }),
       this.prisma.documentVersion.findUnique({ where: { id: versionId } }),
     ]);
 
     if (!document) {
-      throw new NotFoundException('Document not found.');
+      throw new ForbiddenException(
+        'Document not found or you do not have permission to restore versions of it.',
+      );
     }
 
     if (!version || version.documentId !== id) {

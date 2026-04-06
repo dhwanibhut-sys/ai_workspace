@@ -7,7 +7,8 @@
     "dev:backend": "cd ai-workspace-backend && npm run start:dev",
     "dev:frontend": "cd ai-workspace-frontend && npm run dev",
     "install:all": "npm install && cd ai-workspace-backend && npm install && cd ../ai-workspace-frontend && npm install",
-    "build:all": "cd ai-workspace-backend && npm run build && cd ../ai-workspace-frontend && npm run build"
+    "build:all": "cd ai-workspace-backend && npm run build && cd ../ai-workspace-frontend && npm run build",
+    "setup": "cp ai-workspace-backend/.env.example ai-workspace-backend/.env && cp ai-workspace-frontend/.env.local.example ai-workspace-frontend/.env.local"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

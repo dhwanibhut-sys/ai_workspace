@@ -26,15 +26,19 @@ export class ChatController {
   }
 
   @Get(':id')
-  getById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.chatService.getChatById(id);
+  getById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.chatService.getChatById(id, userId);
   }
 
   @Post(':id/messages')
   sendMessage(
     @Param('id', ParseUUIDPipe) id: string,
+    @Query('userId', ParseUUIDPipe) userId: string,
     @Body() sendMessageDto: SendMessageDto,
   ) {
-    return this.chatService.sendMessage(id, sendMessageDto);
+    return this.chatService.sendMessage(id, sendMessageDto, userId);
   }
 }

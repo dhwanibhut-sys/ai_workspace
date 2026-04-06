@@ -33,36 +33,48 @@ export class DocumentsController {
   }
 
   @Get(':id')
-  getById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.documentsService.getDocumentById(id);
+  getById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.documentsService.getDocumentById(id, userId);
   }
 
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
+    @Query('userId', ParseUUIDPipe) userId: string,
     @Body() updateDocumentDto: UpdateDocumentDto,
   ) {
-    return this.documentsService.updateDocument(id, updateDocumentDto);
+    return this.documentsService.updateDocument(id, updateDocumentDto, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.documentsService.deleteDocument(id);
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.documentsService.deleteDocument(id, userId);
   }
 
   @Get(':id/versions')
-  getVersions(@Param('id', ParseUUIDPipe) id: string) {
-    return this.documentsService.getDocumentVersions(id);
+  getVersions(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.documentsService.getDocumentVersions(id, userId);
   }
 
   @Post(':id/versions/restore')
   restoreVersion(
     @Param('id', ParseUUIDPipe) id: string,
+    @Query('userId', ParseUUIDPipe) userId: string,
     @Body() restoreDocumentVersionDto: RestoreDocumentVersionDto,
   ) {
     return this.documentsService.restoreDocumentVersion(
       id,
       restoreDocumentVersionDto.versionId,
+      userId,
     );
   }
 }

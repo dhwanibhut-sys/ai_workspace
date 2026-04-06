@@ -1,5 +1,12 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'http://localhost:3001';
+const getApiUrl = () => {
+  if (typeof window !== 'undefined') {
+    const override = window.localStorage.getItem('ai-workspace-api-url');
+    if (override) return override.replace(/\/$/, '');
+  }
+  return process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'http://localhost:3001';
+};
+
+const API_URL = getApiUrl();
 
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -43,24 +50,30 @@ export const api = {
     }).then(parseResponse);
   },
 
-  getDocument(id: string) {
-    return fetch(`${API_URL}/documents/${id}`).then(parseResponse);
+  getDocument(id: string, userId: string) {
+    return fetch(`${API_URL}/documents/${id}?userId=${userId}`).then(parseResponse);
   },
 
-  updateDocument(id: string, payload: { title?: string; content?: string }) {
-    return fetch(`${API_URL}/documents/${id}`, {
+  updateDocument(
+    id: string,
+    userId: string,
+    payload: { title?: string; content?: string },
+  ) {
+    return fetch(`${API_URL}/documents/${id}?userId=${userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }).then(parseResponse);
   },
 
-  getVersions(id: string) {
-    return fetch(`${API_URL}/documents/${id}/versions`).then(parseResponse);
+  getVersions(id: string, userId: string) {
+    return fetch(`${API_URL}/documents/${id}/versions?userId=${userId}`).then(
+      parseResponse,
+    );
   },
 
-  restoreVersion(id: string, versionId: string) {
-    return fetch(`${API_URL}/documents/${id}/versions/restore`, {
+  restoreVersion(id: string, userId: string, versionId: string) {
+    return fetch(`${API_URL}/documents/${id}/versions/restore?userId=${userId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ versionId }),
@@ -85,15 +98,16 @@ export const api = {
     return fetch(`${API_URL}/chats?userId=${userId}`).then(parseResponse);
   },
 
-  getChat(id: string) {
-    return fetch(`${API_URL}/chats/${id}`).then(parseResponse);
+  getChat(id: string, userId: string) {
+    return fetch(`${API_URL}/chats/${id}?userId=${userId}`).then(parseResponse);
   },
 
   sendMessage(
     chatId: string,
+    userId: string,
     payload: { content: string; documentId?: string; selectedText?: string },
   ) {
-    return fetch(`${API_URL}/chats/${chatId}/messages`, {
+    return fetch(`${API_URL}/chats/${chatId}/messages?userId=${userId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
