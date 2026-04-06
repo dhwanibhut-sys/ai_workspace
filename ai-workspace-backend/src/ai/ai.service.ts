@@ -14,6 +14,7 @@ export class AiService {
 
   async chat(chatWithAiDto: ChatWithAiDto) {
     const apiKey = process.env.OPENAI_API_KEY;
+    const baseURL = process.env.OPENAI_BASE_URL;
 
     if (!apiKey) {
       throw new InternalServerErrorException(
@@ -21,7 +22,10 @@ export class AiService {
       );
     }
 
-    const openai = new OpenAI({ apiKey });
+    const openai = new OpenAI({
+      apiKey,
+      ...(baseURL ? { baseURL } : {}),
+    });
     const document = chatWithAiDto.documentId
       ? await this.prisma.document.findUnique({
           where: { id: chatWithAiDto.documentId },

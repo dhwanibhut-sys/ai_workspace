@@ -7,12 +7,11 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-
-  documents Document[]
+  id        String     @id @default(uuid())
+  email     String     @unique
+  createdAt DateTime   @default(now())
   chats     Chat[]
+  documents Document[]
 }
 
 model Document {
@@ -20,9 +19,9 @@ model Document {
   title     String
   content   String
   ownerId   String
-  owner     User              @relation(fields: [ownerId], references: [id])
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
+  owner     User              @relation(fields: [ownerId], references: [id])
   versions  DocumentVersion[]
   messages  Message[]
 
@@ -41,13 +40,13 @@ model DocumentVersion {
 }
 
 model Chat {
-  id         String    @id @default(uuid())
-  userId     String
-  title      String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages   Message[]
+  id        String    @id @default(uuid())
+  userId    String
+  title     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
 
   @@index([userId, updatedAt])
 }
@@ -60,7 +59,7 @@ model Message {
   documentId String?
   createdAt  DateTime  @default(now())
   chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  document   Document? @relation(fields: [documentId], references: [id])
 
   @@index([chatId, createdAt])
 }
